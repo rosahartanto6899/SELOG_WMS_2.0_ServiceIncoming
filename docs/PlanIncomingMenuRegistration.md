@@ -33,7 +33,7 @@ VALUES
 
 ## Menu Actual Incoming (halaman Actual Incoming — 002-actual-incoming-page)
 
-Endpoint `GET /v1/outstanding-incoming/actual` & `POST /v1/outstanding-incoming/actual/delete`
+Endpoint `GET /v1/actual-incoming` & `POST /v1/actual-incoming/delete`
 memakai `menuCode: ACTUAL-INCOMING` (`outstandingIncomingConstant.actualMenuCode`).
 
 ```sql

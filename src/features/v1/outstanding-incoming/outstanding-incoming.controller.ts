@@ -37,8 +37,6 @@ import {
   PlanQtyDto,
   UpdateStatusDto,
   CreateActualDto,
-  ActualListDto,
-  ActualDeleteDto,
   BinningDto,
   FilterResultDto,
   QualityInspectionDto,
@@ -56,9 +54,6 @@ const READ = { menuCode: cst.menuCode, action: 'READ' };
 const CREATE = { menuCode: cst.menuCode, action: 'CREATE' };
 const UPDATE = { menuCode: cst.menuCode, action: 'UPDATE' };
 const DELETE = { menuCode: cst.menuCode, action: 'DELETE' };
-/** Halaman Actual Incoming — menu terpisah (menuCode ACTUAL-INCOMING) */
-const ACTUAL_READ = { menuCode: cst.actualMenuCode, action: 'READ' };
-const ACTUAL_DELETE = { menuCode: cst.actualMenuCode, action: 'DELETE' };
 
 /**
  * @swagger
@@ -490,54 +485,6 @@ export class OutstandingIncomingController extends BaseHttpController {
   @httpPost('/:id/cancel', ParamValidation(HeaderParamDto))
   async cancelPlanIncoming(@request() req: Request) {
     return await this.commandService.cancelPlanIncoming(req);
-  }
-
-  /**
-   * @swagger
-   * /v1/outstanding-incoming/actual:
-   *   get:
-   *     summary: A-List — DN actual/GR (halaman Actual Incoming: header + GR data)
-   *     tags: [OutstandingIncoming]
-   *     security: [{ bearerAuth: [] }, { api_key: [] }]
-   *     parameters:
-   *       - { in: query, name: page, schema: { type: integer, minimum: 1 } }
-   *       - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
-   *       - { in: query, name: search, schema: { type: string } }
-   *       - { in: query, name: searchBy, schema: { type: string } }
-   *       - { in: query, name: customerCode, schema: { type: string } }
-   *       - { in: query, name: warehouseCode, schema: { type: string } }
-   *       - { in: query, name: order, schema: { type: string } }
-   *       - { in: query, name: sort, schema: { type: string, enum: [asc, desc] } }
-   *     responses:
-   *       200: { description: List actual incoming }
-   *       401: { description: Unauthorized }
-   *       422: { description: Validation errors }
-   */
-  @ValidatePermissions(ACTUAL_READ)
-  @httpGet('/actual', QueryValidation(ActualListDto))
-  async getActualAll(@request() req: Request) {
-    return await this.queryService.getActualAll(req);
-  }
-
-  /**
-   * @swagger
-   * /v1/outstanding-incoming/actual/delete:
-   *   post:
-   *     summary: A-Delete — hapus record actual bulk + alasan (rollback header ke Binning)
-   *     tags: [OutstandingIncoming]
-   *     security: [{ bearerAuth: [] }, { api_key: [] }]
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema: { $ref: '#/components/schemas/ActualIncomingDeleteDto' }
-   *     responses:
-   *       200: { description: Done }
-   */
-  @ValidatePermissions(ACTUAL_DELETE)
-  @httpPost('/actual/delete', BodyValidation(ActualDeleteDto))
-  async deleteActual(@request() req: Request) {
-    return await this.commandService.deleteActual(req);
   }
 
   /**

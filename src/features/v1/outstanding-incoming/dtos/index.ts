@@ -4,7 +4,5 @@ export * from './totals.dto';
 export * from './ids-action.dto';
 export * from './plan-qty.dto';
 export * from './actual.dto';
-export * from './actual-list.dto';
-export * from './actual-delete.dto';
 export * from './input-incoming.dto';
 export * from './qi-detail.dto';

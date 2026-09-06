@@ -414,9 +414,6 @@ export class CommandService {
       ),
     ];
 
-    // record GR aktif (additive — dipakai halaman detail Actual Incoming)
-    const actuals = await this.actualRepository.findActiveByHeaderIds(ids);
-
     const transform = new ByIdTransform();
     return {
       data: {
@@ -466,17 +463,6 @@ export class CommandService {
           fileName: a.fileName,
           attachmentUrl: a.attachmentUrl,
         })),
-        actualIncoming: actuals.map((a) => {
-          const plain = a.get({ plain: true });
-          return {
-            planIncomingHeaderId: plain.planIncomingHeaderId,
-            picReceiver: plain.picReceiver,
-            picBinner: plain.picBinner,
-            grBy: plain.grBy,
-            grDate: plain.grDate,
-            binningLocation: plain.binningLocation,
-          };
-        }),
         stockAvailabilities: [], // dihitung consumer inventory stock (2.0)
       },
       httpCode: HTTP_STATUS.OK,
@@ -534,69 +520,6 @@ export class CommandService {
     });
 
     return { data: { message: cst.messages.success }, httpCode: HTTP_STATUS.OK };
-  }
-
-  /** A-Delete POST /actual/delete — hapus record actual + reset header (bulk + alasan) */
-  async deleteActual(req: any) {
-    const { items } = req.body;
-    const userBy = req.body.userLogin ?? userOf(req);
-    const now = nowWib();
-    const deleted: string[] = [];
-    const skipped: Array<{ id: string; reason: string }> = [];
-
-    await sequelize.transaction(async (t) => {
-      for (const item of items) {
-        const header = await this.repository.getById(item.id, t);
-        // Guard: harus ada record actual aktif; header GR (sudah lanjut proses) ditolak
-        const hasActual = (
-          await this.actualRepository.findActiveByHeaderIds([item.id])
-        ).length > 0;
-        if (!header || !header.get('isActual') || !hasActual) {
-          skipped.push({ id: item.id, reason: 'No active actual record' });
-          continue;
-        }
-        if (header.get('status') === INCOMING_STATUS.GOODS_RECEIPT) {
-          skipped.push({
-            id: item.id,
-            reason: `Status already ${INCOMING_STATUS.GOODS_RECEIPT}`,
-          });
-          continue;
-        }
-
-        // 1. soft-delete record ActualIncoming (audit deletedBy/Date = alasan via user)
-        await this.actualRepository.softDeleteByHeaderIds(
-          [item.id],
-          `${userBy}: ${item.description}`,
-          t,
-        );
-
-        // 2. header: balik ke Binning + isActual=0
-        await this.repository.updateHeader(
-          item.id,
-          {
-            status: INCOMING_STATUS.BINNING,
-            isActual: false,
-            modifiedBy: userBy,
-            modifiedDate: now,
-          },
-          t,
-        );
-
-        // 3. history rollback (status STRING(20) — alasan lengkap sudah di audit soft-delete)
-        await this.repository.insertHistory(
-          item.id,
-          'Delete Actual',
-          userBy,
-          t,
-        );
-        deleted.push(item.id);
-      }
-    });
-
-    return {
-      data: { deleted: deleted.length, skipped },
-      httpCode: HTTP_STATUS.OK,
-    };
   }
 
   // ================= Binning & QI (B) =================

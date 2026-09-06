@@ -93,36 +93,8 @@ export const LIST_SEARCH_COLUMNS = [
   'status',
 ] as const;
 
-/** A-List search LIKE gabung 7 kolom (halaman Actual Incoming) */
-export const ACTUAL_LIST_SEARCH_COLUMNS = [
-  'poNo',
-  'deliveryNoteNo',
-  'customerName',
-  'referenceNo',
-  'supplierName',
-  'description',
-  'status',
-] as const;
-
-/** A-List whitelist kolom sort — `grDate`/`grBy` sort di sisi ActualIncoming join */
-export const ACTUAL_LIST_ORDER_WHITELIST: Record<string, string> = {
-  id: 'id',
-  deliveryNoteNo: 'deliveryNoteNo',
-  poNo: 'poNo',
-  poType: 'poType',
-  poDate: 'poDate',
-  supplierName: 'supplierName',
-  incomingDate: 'incomingDate',
-  referenceNo: 'referenceNo',
-  status: 'status',
-  grDate: 'grDate',
-  grBy: 'grBy',
-  createdAt: 'createdDate',
-};
-
 export const outstandingIncomingConstant = {
   menuCode: 'OUTSTANDING-INCOMING',
-  actualMenuCode: 'ACTUAL-INCOMING',
   defaultDescription: '-',
   attachmentFolder: 'HoldPlanIncoming',
   imageExtensions: ['.jpeg', '.jpg', '.png'],
