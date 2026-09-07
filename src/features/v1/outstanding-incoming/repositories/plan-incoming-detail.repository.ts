@@ -34,6 +34,28 @@ export class PlanIncomingDetailRepository {
     });
   }
 
+  /** A-Delete — reset binning detail (parity usp_DeleteActualIncomingDetail:
+   *  BinningDate=null; 2.0 juga reset binningQty/partialQty/binningBy karena
+   *  ready-check GR membandingkan poQty vs binningQty) */
+  public async resetBinningByHeaderId(
+    headerId: string,
+    userBy: string,
+    now: Date,
+    transaction?: Transaction,
+  ): Promise<void> {
+    await PlanIncomingDetail.update(
+      {
+        binningQty: 0,
+        partialQty: 0,
+        binningDate: null,
+        binningBy: null,
+        modifiedDate: now,
+        modifiedBy: userBy,
+      },
+      { where: { planIncomingHeaderId: headerId }, transaction },
+    );
+  }
+
   public async getByHeaderAndMaterial(
     headerId: string,
     materialCode: string,

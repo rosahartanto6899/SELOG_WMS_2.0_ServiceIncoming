@@ -1,7 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
 import { Pagination } from '@/shared-libs/helpers/pagination.helper';
-import { NotFoundException } from '@/shared-libs/exceptions';
 import { ActualIncomingRepository } from './repositories';
 import {
   ACTUAL_LIST_ORDER_WHITELIST,
@@ -88,28 +87,6 @@ export class QueryService {
         recordsTotal,
       },
       data,
-      httpCode: HTTP_STATUS.OK,
-    };
-  }
-
-  /** A-Detail GET /:id — record GR aktif (PIC receiver/binner, grBy/grDate, lokasi) */
-  async getActualById(req: any) {
-    const { id } = req.params;
-    const rows = await this.actualRepository.findActiveByHeaderIds([id]);
-    const actual = rows[0];
-    if (!actual) {
-      throw new NotFoundException('Actual incoming not found');
-    }
-    const plain = actual.get({ plain: true });
-    return {
-      data: {
-        planIncomingHeaderId: plain.planIncomingHeaderId,
-        picReceiver: plain.picReceiver,
-        picBinner: plain.picBinner,
-        grBy: plain.grBy,
-        grDate: plain.grDate,
-        binningLocation: plain.binningLocation,
-      },
       httpCode: HTTP_STATUS.OK,
     };
   }
