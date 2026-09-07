@@ -1,11 +1,6 @@
 import { injectable } from 'inversify';
-import { Transaction, Op } from 'sequelize';
-import {
-  ActualIncoming,
-  PlanIncomingHeader,
-  PlanIncomingHeaderAddInfo,
-} from '@/database/entities';
-import { nowWib } from '@/utils';
+import { Op } from 'sequelize';
+import { PlanIncomingHeader, PlanIncomingHeaderAddInfo } from '@/database/entities';
 
 /** Row list actual incoming (A-List) — header GR/Transit Out ≤2 bulan.
  *  Kolom GR (picReceiver/picBinner/grBy/grDate/binningLocation) tidak ada di header → null. */
@@ -36,7 +31,7 @@ export interface ActualListRow {
   binningLocation: string | null;
 }
 
-/** A-List via query Sequelize PlanIncomingHeader; A-Detail/A-Delete akses tabel ActualIncoming + header isActual */
+/** A-List via query Sequelize PlanIncomingHeader (parity SP); A-Delete rollback header */
 @injectable()
 export class ActualIncomingRepository {
   /** A-List — parity usp_GetAllActualIncoming: status GR/Transit Out, aktif,
@@ -101,34 +96,5 @@ export class ActualIncomingRepository {
       where: { planIncomingHeaderId: headerIds },
       raw: true,
     })) as any;
-  }
-
-  /** A-Delete — soft-delete record ActualIncoming per header (audit deletedBy/Date) */
-  public async softDeleteByHeaderIds(
-    headerIds: string[],
-    userBy: string,
-    transaction?: Transaction,
-  ): Promise<void> {
-    const now = nowWib();
-    await ActualIncoming.update(
-      {
-        isActive: false,
-        deletedBy: userBy,
-        deletedDate: now,
-        modifiedBy: userBy,
-        modifiedDate: now,
-      },
-      {
-        where: { planIncomingHeaderId: headerIds, isActive: true },
-        transaction,
-      },
-    );
-  }
-
-  /** A-Detail/A-Delete — record aktif per header (guard: harus ada record actual) */
-  public async findActiveByHeaderIds(headerIds: string[]) {
-    return ActualIncoming.findAll({
-      where: { planIncomingHeaderId: headerIds, isActive: true },
-    });
   }
 }

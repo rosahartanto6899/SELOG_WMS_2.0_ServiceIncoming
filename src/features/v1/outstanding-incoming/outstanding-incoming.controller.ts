@@ -293,6 +293,28 @@ export class OutstandingIncomingController extends BaseHttpController {
 
   /**
    * @swagger
+   * /v1/outstanding-incoming/confirm-cancellation:
+   *   post:
+   *     summary: A12 — Bulk confirm Cancellation → Cancelled (+isActive=0, history,
+   *       SQS WHSCLIN kembalikan SOH binned)
+   *     tags: [OutstandingIncoming]
+   *     security: [{ bearerAuth: [] }, { api_key: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema: { $ref: '#/components/schemas/OutstandingIncomingIdsActionDto' }
+   *     responses:
+   *       200: { description: Success / Update skipped }
+   */
+  @ValidatePermissions(UPDATE)
+  @httpPost('/confirm-cancellation', BodyValidation(IdsActionDto))
+  async confirmCancellation(@request() req: Request) {
+    return await this.commandService.confirmCancellation(req);
+  }
+
+  /**
+   * @swagger
    * /v1/outstanding-incoming/holds:
    *   post:
    *     summary: A2 — Hold per header (isHold=1 + record hold)

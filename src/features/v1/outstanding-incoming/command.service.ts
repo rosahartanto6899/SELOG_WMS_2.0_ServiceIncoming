@@ -89,6 +89,87 @@ export class CommandService {
     return { data: { message: cst.messages.success }, httpCode: HTTP_STATUS.OK };
   }
 
+  /** A12 confirm-cancellation (usp_ConfirmDataCancellation + SQS WHSCLIN):
+   *  header → Cancelled + isActive=0 + history; SOH binned dikembalikan
+   *  per material (WHSCLIN) — parity CoreApp ConfirmDataCancellation. */
+  async confirmCancellation(req: any) {
+    const { ids } = req.body;
+    const userBy = req.body.userLogin ?? userOf(req);
+    const headers = await this.repository.findByIds(ids);
+    const active = headers.filter((h) => h.get('isActive'));
+
+    if (!active.length) {
+      return { data: { message: cst.messages.updateSkipped }, httpCode: HTTP_STATUS.OK };
+    }
+
+    await sequelize.transaction(async (t) => {
+      for (const header of active) {
+        const id = header.get('id') as string;
+        const now = nowWib();
+
+        await this.repository.updateHeader(
+          id,
+          {
+            status: INCOMING_STATUS.CANCELLED,
+            isActive: false,
+            modifiedBy: userBy,
+            modifiedDate: now,
+          },
+          t,
+        );
+        await this.repository.insertHistory(
+          id,
+          INCOMING_STATUS.CANCELLED,
+          userBy,
+          t,
+        );
+
+        // SQS WHSCLIN — kembalikan SOH per material yang sudah binning
+        // (parity SP: hanya BinningDate <> '', SUM(BinningQty))
+        const details = await this.detailRepository.findByHeader(id, t);
+        const qtyByMaterial = new Map<string, number>();
+        for (const d of details) {
+          if (!d.get('binningDate')) continue;
+          const code = d.get('materialCode') as string;
+          qtyByMaterial.set(
+            code,
+            (qtyByMaterial.get(code) ?? 0) +
+              ((d.get('binningQty') as number) ?? 0),
+          );
+        }
+        for (const [code, qty] of qtyByMaterial) {
+          if (!qty) continue;
+          const d = details.find((x) => x.get('materialCode') === code)!;
+          await awsSqsThird.publishToInventory(
+            {
+              CustomerCode: (header.get('customerCode') as string) ?? null,
+              CustomerName: (header.get('customerName') as string) ?? null,
+              DeliveryNoteNo: (header.get('deliveryNoteNo') as string) ?? null,
+              POType: (header.get('poType') as string) ?? null,
+              PODate: header.get('poDate')
+                ? new Date(header.get('poDate') as Date).toISOString()
+                : null,
+              WarehouseCode: (header.get('warehouseCode') as string) ?? null,
+              WarehouseName: (header.get('warehouseName') as string) ?? null,
+              MaterialCode: code,
+              MaterialName: (d.get('materialName') as string) ?? null,
+              MaterialBrand: (d.get('materialBrand') as string) ?? null,
+              UoM: (d.get('uom') as string) ?? null,
+              QtyPlanIncoming: 0,
+              QtyPlanOutgoing: 0,
+              QtySOH: qty,
+              QtyAvailable: 0,
+            },
+            userBy,
+            'WHSCLIN',
+          );
+        }
+      }
+    });
+
+    return { data: { message: cst.messages.success }, httpCode: HTTP_STATUS.OK };
+  }
+
   /** A2 holds insert (usp_InsertHoldIncoming — efek live: isHold=1 + record) */
   async insertHolds(req: any) {
     const { holds } = req.body;
