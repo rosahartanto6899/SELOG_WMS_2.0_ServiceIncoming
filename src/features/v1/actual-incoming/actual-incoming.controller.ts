@@ -3,8 +3,8 @@ import { inject } from 'inversify';
 import {
   BaseHttpController,
   controller,
+  httpDelete,
   httpGet,
-  httpPost,
   request,
 } from 'inversify-express-utils';
 import {
@@ -17,7 +17,7 @@ import {
 import { QueryService } from './query.service';
 import { CommandService } from './command.service';
 import { actualIncomingConstant as cst } from './constants';
-import { ActualListDto, ActualDeleteDto } from './dtos';
+import { ActualListDto, ActualDeleteOneDto } from './dtos';
 
 const READ = { menuCode: cst.menuCode, action: 'READ' };
 const DELETE = { menuCode: cst.menuCode, action: 'DELETE' };
@@ -74,39 +74,24 @@ export class ActualIncomingController extends BaseHttpController {
   /**
    * @swagger
    * /v1/actual-incoming/{id}:
-   *   get:
-   *     summary: A-Detail — record GR aktif per header (PIC, grBy/grDate, lokasi binning)
+   *   delete:
+   *     summary: A-Delete — hapus actual per id (rollback header ke Binning)
    *     tags: [ActualIncoming]
    *     security: [{ bearerAuth: [] }, { api_key: [] }]
    *     parameters:
    *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
-   *     responses:
-   *       200: { description: Actual record }
-   *       404: { description: Not found }
-   */
-  @ValidatePermissions(READ)
-  @httpGet('/:id')
-  async getActualById(@request() req: Request) {
-    return await this.queryService.getActualById(req);
-  }
-
-  /**
-   * @swagger
-   * /v1/actual-incoming/delete:
-   *   post:
-   *     summary: A-Delete — hapus record actual bulk + alasan (rollback header ke Binning)
-   *     tags: [ActualIncoming]
-   *     security: [{ bearerAuth: [] }, { api_key: [] }]
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
-   *           schema: { $ref: '#/components/schemas/ActualIncomingDeleteDto' }
+   *           schema: { $ref: '#/components/schemas/ActualIncomingDeleteOneDto' }
    *     responses:
    *       200: { description: Done }
+   *       401: { description: Unauthorized }
+   *       422: { description: Validation errors }
    */
   @ValidatePermissions(DELETE)
-  @httpPost('/delete', BodyValidation(ActualDeleteDto))
+  @httpDelete('/:id', BodyValidation(ActualDeleteOneDto))
   async deleteActual(@request() req: Request) {
     return await this.commandService.deleteActual(req);
   }

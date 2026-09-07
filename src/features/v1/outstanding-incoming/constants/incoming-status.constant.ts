@@ -13,6 +13,7 @@ export const INCOMING_STATUS = {
   TRANSIT_IN: 'Transit In',
   TRANSIT_OUT: 'Transit Out',
   CANCELLED: 'Cancelled',
+  CANCELLATION: 'Cancellation',
   HOLD: 'Hold',
 } as const;
 

@@ -67,19 +67,20 @@ class AwsSqsThird {
   }
 
   /**
-   * Parity CoreApp `SqsService.PublishToInventoryAsync` (pola UpdateBinningDate):
-   * ActionType 'WHSIN2', qtySOH = qty binning (increment) — standalone, tanpa
-   * join planOutgoing. LogId = UUID lokal.
+   * Parity CoreApp `SqsService.PublishToInventoryAsync`. ActionType default
+   * 'WHSIN2' (tambah qtySOH dari binning); 'WHSINX' = kembalikan SOH (delete
+   * actual incoming, parity CoreApp DeleteActualIncoming). LogId = UUID lokal.
    * // ponytail: MessageDataLog CoreApp via HTTP ke StockAPI legacy tidak dipanggil
    * (log 2.0 dikelola consumer); tambahkan jika consumer butuh tabel log pengirim.
    */
   public async publishToInventory(
     stock: StockAvailabilityMessage,
     userBy: string,
+    actionType: 'WHSIN2' | 'WHSINX' | 'WHSCLIN' = 'WHSIN2',
   ): Promise<void> {
     const payload: StockAvailabilityFinalMessage = {
       StockAvailabilityDtos: [stock],
-      ActionType: 'WHSIN2',
+      ActionType: actionType,
       UserBy: userBy,
       LogId: randomUUID(),
     };
