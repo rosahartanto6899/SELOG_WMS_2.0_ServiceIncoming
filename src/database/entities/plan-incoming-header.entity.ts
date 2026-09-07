@@ -8,6 +8,7 @@ type Creation = Optional<
   | 'materialCategory'
   | 'status'
   | 'isHold'
+  | 'isActual'
   | 'isActive'
   | 'createdDate'
   | 'createdBy'
@@ -53,6 +54,7 @@ const PlanIncomingHeader: ModelDefined<
       defaultValue: 'Draft',
     },
     isHold: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
+    isActual: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     createdDate: { type: DataTypes.DATE, allowNull: false },
     createdBy: { type: DataTypes.STRING(75), allowNull: false },

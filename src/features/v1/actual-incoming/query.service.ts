@@ -1,10 +1,7 @@
 import { inject, injectable } from 'inversify';
-import { Op, Order, WhereOptions } from 'sequelize';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
 import { Pagination } from '@/shared-libs/helpers/pagination.helper';
 import { NotFoundException } from '@/shared-libs/exceptions';
-import { sequelize } from '@/utils/database.util';
-import { INCOMING_STATUS } from '../outstanding-incoming/constants';
 import { ActualIncomingRepository } from './repositories';
 import {
   ACTUAL_LIST_ORDER_WHITELIST,
@@ -19,63 +16,55 @@ export class QueryService {
     private readonly actualRepository: ActualIncomingRepository,
   ) {}
 
-  /** A-List GET / — header isActual + GR data */
+  /** A-List GET / — parity usp_GetAllActualIncoming (GR/Transit Out ≤2 bulan,
+   *  warehouseCode exact). customerCode = customer aktif dari token (tenant).
+   *  Tanpa search/sort/paging di query → in-memory. */
   async getActualAll(req: any) {
     const param = req.query;
     const page = param.page ?? 1;
     const limit = param.limit ?? 10;
     const { limit: size, offset } = Pagination.getPagination(page, limit);
 
-    const baseWhere: WhereOptions = {
-      isActive: true,
-      isActual: true,
-      status: { [Op.ne]: INCOMING_STATUS.TRANSIT_OUT },
-    };
-    if (param.customerCode) {
-      baseWhere.customerCode = { [Op.like]: `%${param.customerCode}%` };
-    }
-    if (param.warehouseCode) {
-      baseWhere.warehouseCode = { [Op.like]: `%${param.warehouseCode}%` };
-    }
-    if (param.search) {
-      const like = `%${param.search}%`;
-      if (param.searchBy) {
-        baseWhere[param.searchBy] = { [Op.like]: like };
-      } else {
-        baseWhere[Op.or as unknown as string] = ACTUAL_LIST_SEARCH_COLUMNS.map(
-          (column) => ({ [column]: { [Op.like]: like } }),
-        );
-      }
-    }
-
-    const recordsTotal = await this.actualRepository.countActualAll({
-      isActive: true,
-      isActual: true,
-      status: { [Op.ne]: INCOMING_STATUS.TRANSIT_OUT },
-    });
-    const recordsFiltered = await this.actualRepository.countActualAll(
-      baseWhere,
-    );
-
-    const orderColumn =
-      ACTUAL_LIST_ORDER_WHITELIST[param.order ?? 'grDate'] ?? 'grDate';
-    const sort = param.sort === 'asc' ? 'ASC' : 'DESC';
-    // grDate/grBy hidup di tabel ActualIncoming (join) — prefix agar tidak ambiguous
-    const prefixed = ['grDate', 'grBy'].includes(orderColumn)
-      ? `actuals.${orderColumn}`
-      : orderColumn;
-    const order: Order = [[sequelize.literal(prefixed), sort]];
-
     const rows = await this.actualRepository.findActualAll(
-      baseWhere,
-      order,
-      size,
-      offset,
+      req.user?.tokenCustomerCode ?? null,
+      param.warehouseCode ?? null,
     );
+
+    // search in-memory (query tidak punya parameter search)
+    let filtered: any[] = rows;
+    if (param.search) {
+      const needle = String(param.search).toLowerCase();
+      const cols = (
+        param.searchBy ? [param.searchBy] : [...ACTUAL_LIST_SEARCH_COLUMNS]
+      ) as string[];
+      filtered = rows.filter((r) =>
+        cols.some((c) => String(r[c] ?? '').toLowerCase().includes(needle)),
+      );
+    }
+
+    // sort in-memory; grDate/grBy tidak dihasilkan query → fallback createdDate
+    const col = ACTUAL_LIST_ORDER_WHITELIST[param.order ?? 'grDate'] ?? 'createdDate';
+    const key = ['grDate', 'grBy'].includes(col) ? 'createdDate' : col;
+    const dir = param.sort === 'asc' ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => {
+      const x = a[key];
+      const y = b[key];
+      if (x == null) return 1;
+      if (y == null) return -1;
+      const cmp =
+        x instanceof Date || y instanceof Date
+          ? new Date(x).getTime() - new Date(y).getTime()
+          : String(x).localeCompare(String(y), undefined, { numeric: true });
+      return cmp * dir;
+    });
+
+    const recordsTotal = rows.length;
+    const recordsFiltered = filtered.length;
+    const pageRows = filtered.slice(offset, offset + size);
 
     // addinfo digabung terpisah (hindari duplikasi join 1:N + limit)
     const addInfos = await this.actualRepository.findAddInfoByHeaderIds(
-      rows.map((r) => r.id),
+      pageRows.map((r) => r.id),
     );
     const addInfoById = new Map<string, string>();
     for (const a of addInfos) {
@@ -85,7 +74,7 @@ export class QueryService {
         prev ? `${prev}; ${a.name}: ${a.value}` : `${a.name}: ${a.value}`,
       );
     }
-    const data = rows.map((r) => ({
+    const data = pageRows.map((r) => ({
       ...r,
       additionalInfo: addInfoById.get(r.id) ?? null,
     }));

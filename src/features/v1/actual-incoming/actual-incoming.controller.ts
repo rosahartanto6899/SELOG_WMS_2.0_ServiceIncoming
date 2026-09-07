@@ -45,7 +45,7 @@ export class ActualIncomingController extends BaseHttpController {
    * @swagger
    * /v1/actual-incoming:
    *   get:
-   *     summary: A-List — daftar Actual Incoming (header isActual + data GR)
+   *     summary: A-List — daftar Actual Incoming (GR/Transit Out ≤2 bulan; customerCode dari customer aktif token)
    *     tags: [ActualIncoming]
    *     security: [{ bearerAuth: [] }, { api_key: [] }]
    *     parameters:
@@ -53,7 +53,6 @@ export class ActualIncomingController extends BaseHttpController {
    *       - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
    *       - { in: query, name: search, schema: { type: string } }
    *       - { in: query, name: searchBy, schema: { type: string } }
-   *       - { in: query, name: customerCode, schema: { type: string } }
    *       - { in: query, name: warehouseCode, schema: { type: string } }
    *       - { in: query, name: order, schema: { type: string } }
    *       - { in: query, name: sort, schema: { type: string, enum: [asc, desc] } }

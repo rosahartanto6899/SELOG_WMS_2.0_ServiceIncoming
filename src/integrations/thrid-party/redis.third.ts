@@ -16,15 +16,18 @@ export class RedisCache {
 
     // Creating Redis connection only if it does not exist
     if (!RedisCache.redis) {
+      // TLS hanya untuk Redis ter-encrypt (Azure 6380 / REDIS_TLS=true);
+      // Redis lokal dev (127.0.0.1:6379) plain TCP — TLS-paksa bikin koneksi
+      // hang tanpa error → semua request yang lewat cache (auth) menggantung.
+      const useTls =
+        SecretManager.env.REDIS_TLS === 'true' || redisPort === 6380;
       RedisCache.redis = new Redis({
         host: redisHost,
         port: redisPort,
         db: redisDb,
         // username: redisUsername, // Will be undefined if not provided
         password: redisPassword, // Will be undefined if not provided
-        tls: {
-          rejectUnauthorized: false,
-        },
+        ...(useTls ? { tls: { rejectUnauthorized: false } } : {}),
       });
     }
 

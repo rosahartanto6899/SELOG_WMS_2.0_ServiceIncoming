@@ -13,8 +13,7 @@ import { ACTUAL_LIST_ORDER_WHITELIST, ACTUAL_LIST_SEARCH_COLUMNS } from '../cons
  *         limit: { type: integer, minimum: 1, maximum: 100, example: 10 }
  *         search: { type: string, example: "DN-123" }
  *         searchBy: { type: string, enum: [poNo, deliveryNoteNo, customerName, referenceNo, supplierName, description, status], description: "Kolom search (pola LOGIS); tanpa searchBy = LIKE gabung 7 kolom" }
- *         customerCode: { type: string, description: Filter LIKE }
- *         warehouseCode: { type: string, description: Filter LIKE }
+ *         warehouseCode: { type: string, description: "Filter exact" }
  *         order: { type: string, enum: [id, deliveryNoteNo, poNo, poType, poDate, supplierName, incomingDate, referenceNo, status, grDate, createdAt] }
  *         sort: { type: string, enum: [asc, desc] }
  */
@@ -35,10 +34,6 @@ export class ActualListDto {
   @IsOptional()
   @IsString({ message: 'Search must be a string' })
   search?: string;
-
-  @IsOptional()
-  @IsString({ message: 'CustomerCode must be a string' })
-  customerCode?: string;
 
   @IsOptional()
   @IsString({ message: 'WarehouseCode must be a string' })

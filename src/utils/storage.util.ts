@@ -6,6 +6,34 @@ import {
   CopyObjectCommandInput,
 } from '@aws-sdk/client-s3';
 import { AwsS3Client } from '@/integrations/thrid-party/aws-s3.third';
+import {
+  BlobServiceClient,
+  PublicAccessType,
+} from '@azure/storage-blob';
+import { randomUUID } from 'node:crypto';
+
+/**
+ * Parity CoreApp `StorageService.MediaToBlob` — upload buffer ke Azure Blob,
+ * nama blob `{folderName}/{guid}{extension}`, container dibuat jika belum ada
+ * (akses public blob). Config: BLOB_CONNECTION + BLOB_CONTAINER_NAME
+ * (nilai disalin dari appsettings CoreApp).
+ */
+export async function mediaToBlob(
+  content: Buffer,
+  containerName: string,
+  folderName: string,
+  extension: string,
+): Promise<string> {
+  const client = new BlobServiceClient(process.env.BLOB_CONNECTION ?? '');
+  const container = client.getContainerClient(containerName);
+  await container.createIfNotExists({ access: 'blob' as PublicAccessType });
+  const blockBlob = container.getBlockBlobClient(
+    `${folderName}/${randomUUID()}${extension}`,
+  );
+  await blockBlob.upload(content, content.byteLength);
+  return blockBlob.url;
+}
+
 
 class S3Storage {
   private static instance: S3Storage;

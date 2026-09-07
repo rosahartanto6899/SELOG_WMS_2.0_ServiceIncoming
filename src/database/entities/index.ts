@@ -6,5 +6,7 @@ export * from './plan-incoming-add-info.entity';
 export * from './plan-incoming-schedule.entity';
 export * from './plan-incoming-history.entity';
 export * from './hold-plan-incoming-attachment.entity';
+export * from './hold-plan-incoming-attachment-temp.entity';
+export * from './mst-material-location-barcode-temp.entity';
 export * from './plan-incoming-hold.entity';
 export * from './actual-incoming.entity';

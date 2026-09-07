@@ -15,6 +15,7 @@ export interface PlanIncomingHeaderAttributes {
   description?: string | null;
   status?: string;
   isHold?: boolean;
+  isActual?: boolean;
   isActive?: boolean;
   createdDate?: Date;
   createdBy?: string | null;
@@ -133,6 +134,28 @@ export interface PlanIncomingHoldAttributes {
   modifiedBy?: string | null;
   deletedBy?: string | null;
   deletedDate?: Date | null;
+}
+
+/** Attachment hold TEMP (upload sebelum GR) — tabel legacy, dipindah permanen saat A11 */
+export interface HoldPlanIncomingAttachmentTempAttributes {
+  id?: string;
+  incomingPlanDetailId: string;
+  fileName: string;
+  attachmentUrl: string;
+  createdDate?: Date;
+  createdBy?: string | null;
+  modifiedDate?: Date | null;
+  modifiedBy?: string | null;
+}
+
+/** Master temp barcode material+lokasi (sumber B4 barcode sync) — tabel legacy staging */
+export interface MstMaterialLocationBarcodeTempAttributes {
+  id?: string;
+  materialCode?: string | null;
+  materialBarcode?: string | null;
+  locationBarcode?: string | null;
+  warehouseCode?: string | null;
+  customerCode?: string | null;
 }
 
 /** Record GR/actual — NET-NEW */
