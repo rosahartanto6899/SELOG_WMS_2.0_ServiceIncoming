@@ -9,6 +9,7 @@ import { PlanIncomingHistory } from './plan-incoming-history.entity';
 import { PlanIncomingHold } from './plan-incoming-hold.entity';
 import { ActualIncoming } from './actual-incoming.entity';
 import { HoldPlanIncomingAttachment } from './hold-plan-incoming-attachment.entity';
+import { HoldPlanIncomingAttachmentTemp } from './hold-plan-incoming-attachment-temp.entity';
 
 export function setupAssociations() {
   // PlanIncomingHeader has many PlanIncomingDetail
@@ -59,9 +60,25 @@ export function setupAssociations() {
     as: 'actuals',
   });
 
-  // PlanIncomingDetail has many Attachment
+  // PlanIncomingDetail has many Attachment (permanen + temp)
   PlanIncomingDetail.hasMany(HoldPlanIncomingAttachment, {
     foreignKey: 'incomingPlanDetailId',
     as: 'attachments',
+  });
+
+  PlanIncomingDetail.hasMany(HoldPlanIncomingAttachmentTemp, {
+    foreignKey: 'incomingPlanDetailId',
+    as: 'attachmentTemps',
+  });
+
+  // Sisi include dari tabel attachment → detail
+  HoldPlanIncomingAttachment.belongsTo(PlanIncomingDetail, {
+    foreignKey: 'incomingPlanDetailId',
+    as: 'attachmentDetail',
+  });
+
+  HoldPlanIncomingAttachmentTemp.belongsTo(PlanIncomingDetail, {
+    foreignKey: 'incomingPlanDetailId',
+    as: 'attachmentDetail',
   });
 }
