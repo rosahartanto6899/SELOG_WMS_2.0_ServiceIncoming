@@ -212,6 +212,27 @@ export class OutstandingIncomingController extends BaseHttpController {
 
   /**
    * @swagger
+   * /v1/outstanding-incoming/totals/by-status:
+   *   post:
+   *     summary: Q10 — Kartu summary Carry Over / Today / Planned / Hold
+   *     tags: [OutstandingIncoming]
+   *     security: [{ bearerAuth: [] }, { api_key: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema: { $ref: '#/components/schemas/OutstandingIncomingTotalsDto' }
+   *     responses:
+   *       200: { description: Total per status kartu }
+   */
+  @ValidatePermissions(READ)
+  @httpPost('/totals/by-status', BodyValidation(TotalsDto))
+  async getSummaryBuckets(@request() req: Request) {
+    return await this.queryService.getSummaryBuckets(req);
+  }
+
+  /**
+   * @swagger
    * /v1/outstanding-incoming/indicator:
    *   post:
    *     summary: Q9 — Indicator qty vs binning per header

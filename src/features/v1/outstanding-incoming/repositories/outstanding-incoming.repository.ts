@@ -289,7 +289,7 @@ export class OutstandingIncomingRepository {
     });
   }
 
-  private totalsWhere(warehouseCodes: string[]): WhereOptions {
+  private totalsWhere(warehouseCodes?: string[]): WhereOptions {
     return {
       isActive: true,
       status: {
@@ -301,8 +301,58 @@ export class OutstandingIncomingRepository {
           'Confirmed',
         ],
       },
-      warehouseCode: { [Op.in]: warehouseCodes },
+      // kosong/tidak diisi = semua gudang; dulu Op.in: [] selalu cocok NOL baris
+      ...(warehouseCodes?.length
+        ? { warehouseCode: { [Op.in]: warehouseCodes } }
+        : {}),
     };
+  }
+
+  /**
+   * Q10 — ringkasan kartu berdasarkan IncomingDate vs hari ini + IsHold, di atas
+   * base filter yang sama dengan Q6/Q7 (isActive + 5 status aktif + warehouse)
+   * ditambah "belum di-GR-kan" (IsActual=0 ATAU IsActual IS NULL).
+   * Carry Over: IncomingDate > hari ini. Today: IncomingDate = hari ini.
+   * Planned: IncomingDate < hari ini. Hold: IsHold = true (independen dari tanggal).
+   */
+  public async countSummaryBuckets(warehouseCodes: string[]): Promise<{
+    carryOver: number;
+    today: number;
+    planned: number;
+    hold: number;
+  }> {
+    const base = {
+      ...this.totalsWhere(warehouseCodes),
+      [Op.or]: [{ isActual: false }, { isActual: null }],
+    };
+    const now = nowWib();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+    const [carryOver, today, planned, hold] = await Promise.all([
+      PlanIncomingHeader.count({
+        where: { ...base, incomingDate: { [Op.gte]: startOfTomorrow } },
+      }),
+      PlanIncomingHeader.count({
+        where: {
+          ...base,
+          incomingDate: { [Op.gte]: startOfToday, [Op.lt]: startOfTomorrow },
+        },
+      }),
+      PlanIncomingHeader.count({
+        where: { ...base, incomingDate: { [Op.lt]: startOfToday } },
+      }),
+      PlanIncomingHeader.count({
+        where: { ...base, isHold: true },
+      }),
+    ]);
+
+    return { carryOver, today, planned, hold };
   }
 
   /** Q8 — history (ORDER BY date presentasional) */

@@ -234,6 +234,13 @@ export class QueryService {
     };
   }
 
+  /** Q10 POST /totals/by-status — Carry Over / Today / Planned / Hold (kartu summary halaman) */
+  async getSummaryBuckets(req: any) {
+    const { warehouseCodes } = req.body;
+    const data = await this.repository.countSummaryBuckets(warehouseCodes);
+    return { data, httpCode: HTTP_STATUS.OK };
+  }
+
   /** Q8 GET /:id/history (usp_usp_GetPlanIncomingHistory) */
   async getHistory(req: any) {
     const { id } = req.params;
