@@ -116,26 +116,4 @@ export class UpsertDto {
   @IsString()
   @MaxLength(200)
   upsertReason?: string;
-
-  // Konteks header (dulu parameter SP dari sesi CoreApp) — diisi FE dari konteks halaman
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  customerCode?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(75)
-  customerName?: string;
-
-  // Wajib — FE mengharuskan pilih gudang sebelum submit
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(50)
-  warehouseCode: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(75)
-  warehouseName: string;
 }

@@ -39,6 +39,20 @@ export class UploadIncomingAhmCommandService {
     const userBy = userData?.tokenUserId ?? 'system';
     let isCreate = true;
 
+    // warehouse aktif dari token (parity customer) — bukan payload FE
+    const warehouseCode =
+      userData?.activeWarehouseCode ?? null;
+    const warehouseName =
+      userData?.activeWarehouseName ?? null;
+    if (!warehouseCode || !warehouseName) {
+      throw new UnprocessableEntityException([
+        {
+          field: 'warehouseCode',
+          message: ['No active warehouse for this session'],
+        },
+      ]);
+    }
+
     await sequelize.transaction(async (transaction: Transaction) => {
       // === Header: find-or-create by DeliveryNoteNo (lock saat cek) ===
       const existingHeader = await this.headerRepository.getByDeliveryNoteNo(
@@ -61,8 +75,8 @@ export class UploadIncomingAhmCommandService {
         await this.headerRepository.update(
           existingHeader.get('id') as string,
           {
-            warehouseCode: body.warehouseCode,
-            warehouseName: body.warehouseName,
+            warehouseCode,
+            warehouseName,
             incomingDate: body.deliveryNoteDate,
             poNo: body.poNumber,
             poType: body.deliveryNoteType,
@@ -77,8 +91,8 @@ export class UploadIncomingAhmCommandService {
           {
             customerCode: userData?.tokenCustomerCode ?? null,
             customerName: userData?.tokenCustomerName ?? '-',
-            warehouseCode: body.warehouseCode,
-            warehouseName: body.warehouseName,
+            warehouseCode,
+            warehouseName,
             deliveryNoteNo: body.deliveryNoteNo,
             incomingDate: body.deliveryNoteDate,
             poNo: body.poNumber,
