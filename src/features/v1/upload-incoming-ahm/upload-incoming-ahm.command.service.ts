@@ -40,10 +40,8 @@ export class UploadIncomingAhmCommandService {
     let isCreate = true;
 
     // warehouse aktif dari token (parity customer) — bukan payload FE
-    const warehouseCode =
-      userData?.activeWarehouseCode ?? null;
-    const warehouseName =
-      userData?.activeWarehouseName ?? null;
+    const warehouseCode = userData?.tokenWarehouseCode ?? null;
+    const warehouseName = userData?.tokenWarehouseName ?? null;
     if (!warehouseCode || !warehouseName) {
       throw new UnprocessableEntityException([
         {
